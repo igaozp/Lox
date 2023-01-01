@@ -1,4 +1,4 @@
-package io.github.igaozp;
+package io.github.igaozp.lox;
 
 class Token {
     final TokenType type;

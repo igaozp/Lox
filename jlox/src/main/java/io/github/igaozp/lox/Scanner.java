@@ -1,11 +1,11 @@
-package io.github.igaozp;
+package io.github.igaozp.lox;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.github.igaozp.TokenType.*;
+import static io.github.igaozp.lox.TokenType.*;
 
 class Scanner {
     private final String source;

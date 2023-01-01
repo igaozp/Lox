@@ -1,4 +1,4 @@
-package io.github.igaozp;
+package io.github.igaozp.lox;
 
 import java.io.BufferedReader;
 import java.io.IOException;
