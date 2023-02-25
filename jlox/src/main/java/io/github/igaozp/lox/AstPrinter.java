@@ -6,6 +6,12 @@ class AstPrinter implements Expr.Visitor<String> {
     }
 
     @Override
+    public String visitAssignExpr(Expr.Assign expr) {
+        // todo
+        return null;
+    }
+
+    @Override
     public String visitBinaryExpr(Expr.Binary expr) {
         return parentTheSize(expr.operator.lexeme, expr.left, expr.right);
     }
@@ -26,6 +32,12 @@ class AstPrinter implements Expr.Visitor<String> {
     @Override
     public String visitUnaryExpr(Expr.Unary expr) {
         return parentTheSize(expr.operator.lexeme, expr.right);
+    }
+
+    @Override
+    public String visitVariableExpr(Expr.Variable expr) {
+        // todo
+        return null;
     }
 
     private String parentTheSize(String name, Expr... exprs) {
