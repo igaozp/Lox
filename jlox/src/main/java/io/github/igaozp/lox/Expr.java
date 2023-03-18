@@ -70,7 +70,6 @@ abstract class Expr {
 
         final Object value;
     }
-
     static class Logical extends Expr {
         Logical(Expr left, Token operator, Expr right) {
             this.left = left;
@@ -87,7 +86,6 @@ abstract class Expr {
         final Token operator;
         final Expr right;
     }
-
     static class Unary extends Expr {
         Unary(Token operator, Expr right) {
             this.operator = operator;

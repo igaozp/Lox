@@ -7,10 +7,8 @@ import static io.github.igaozp.lox.TokenType.*;
 
 /**
  * program      -> declaration* EOF
- * declaration  -> varDecl
- * | statement;
- * statement    -> exprStmt
- * | printStmt;
+ * declaration  -> varDecl | statement;
+ * statement    -> exprStmt | printStmt;
  */
 public class Parser {
     private static class ParseError extends RuntimeException {
@@ -51,20 +49,25 @@ public class Parser {
     }
 
     /**
-     * statement      → exprStmt
-     * | ifStmt
-     * | printStmt
-     * | block ;
+     * statement → exprStmt | ifStmt | printStmt | whileStmt | block ;
      *
      * @return Stmt
      */
     private Stmt statement() {
+        if (match(FOR)) {
+            return forStatement();
+        }
+
         if (match(IF)) {
             return ifStatement();
         }
 
         if (match(PRINT)) {
             return printStatement();
+        }
+
+        if (match(WHILE)) {
+            return whileStatement();
         }
 
         if (match(LEFT_BRACE)) {
@@ -75,8 +78,54 @@ public class Parser {
     }
 
     /**
-     * ifStmt         → "if" "(" expression ")" statement
-     * ( "else" statement )? ;
+     * forStmt → "for" "(" ( varDecl | exprStmt | ";" ) expression? ";" expression? ")" statement ;
+     *
+     * @return Stmt
+     */
+    private Stmt forStatement() {
+        consume(LEFT_PAREN, "Expect '(' after 'for'.");
+
+        Stmt initializer;
+        if (match(SEMICOLON)) {
+            initializer = null;
+        } else if (match(VAR)) {
+            initializer = varDeclaration();
+        } else {
+            initializer = expressionStatement();
+        }
+
+        Expr condition = null;
+        if (!check(SEMICOLON)) {
+            condition = expression();
+        }
+        consume(SEMICOLON, "Expect ';' after loop condition.");
+
+        Expr increment = null;
+        if (!check(RIGHT_PAREN)) {
+            increment = expression();
+        }
+        consume(RIGHT_PAREN, "Expect ')' after for clauses.");
+
+        Stmt body = statement();
+
+        if (increment != null) {
+            body = new Stmt.Block(List.of(body, new Stmt.Expression(increment)));
+        }
+
+        if (condition != null) {
+            condition = new Expr.Literal(true);
+        }
+        body = new Stmt.While(condition, body);
+
+        if (initializer != null) {
+            body = new Stmt.Block(List.of(initializer, body));
+        }
+
+        return body;
+    }
+
+    /**
+     * ifStmt → "if" "(" expression ")" statement ( "else" statement )? ;
      *
      * @return Stmt
      */
@@ -117,6 +166,20 @@ public class Parser {
         return new Stmt.Var(name, initailizer);
     }
 
+    /**
+     * whileStmt → "while" "(" expression ")" statement ;
+     *
+     * @return Stmt
+     */
+    private Stmt whileStatement() {
+        consume(LEFT_PAREN, "Expect '(' after 'while'.");
+        Expr condition = expression();
+        consume(RIGHT_PAREN, "Expect ')' after condition.");
+        Stmt body = statement();
+
+        return new Stmt.While(condition, body);
+    }
+
     private Stmt expressionStatement() {
         Expr expr = expression();
         consume(SEMICOLON, "Expect ';' after expression.");
@@ -140,8 +203,7 @@ public class Parser {
     }
 
     /**
-     * assignment -> IDENTIFIER "=" assignment
-     *             | logic_or
+     * assignment -> IDENTIFIER "=" assignment | logic_or
      *
      * @return Expr
      */
@@ -222,7 +284,7 @@ public class Parser {
     private Expr comparison() {
         Expr expr = term();
 
-        while(match(GREATER, GREATER_EQUAL, LESS, LESS_EQUAL)) {
+        while (match(GREATER, GREATER_EQUAL, LESS, LESS_EQUAL)) {
             Token operator = previous();
             Expr right = term();
             expr = new Expr.Binary(expr, operator, right);
@@ -266,8 +328,7 @@ public class Parser {
     }
 
     /**
-     * unary → ( "!" | "-" ) unary
-     *          | primary
+     * unary → ( "!" | "-" ) unary | primary
      *
      * @return Expr
      */
@@ -282,8 +343,7 @@ public class Parser {
     }
 
     /**
-     * primary → NUMBER | STRING | "true" | "false" | "nil"
-     *            | "(" expression ")"
+     * primary → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")"
      *
      * @return Expr
      */
