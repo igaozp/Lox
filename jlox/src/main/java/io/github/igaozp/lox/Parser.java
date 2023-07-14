@@ -35,8 +35,18 @@ public class Parser {
         return assignment();
     }
 
+    /**
+     * declaration    → funDecl
+     *                | varDecl
+     *                | statement ;
+     *
+     * @return Stmt
+     */
     private Stmt declaration() {
         try {
+            if (match(FUN)) {
+                return function("function");
+            }
             if (match(VAR)) {
                 return varDeclaration();
             }
@@ -49,7 +59,7 @@ public class Parser {
     }
 
     /**
-     * statement → exprStmt | ifStmt | printStmt | whileStmt | block ;
+     * statement → exprStmt | ifStmt | printStmt | returnStmt | whileStmt | block ;
      *
      * @return Stmt
      */
@@ -64,6 +74,10 @@ public class Parser {
 
         if (match(PRINT)) {
             return printStatement();
+        }
+
+        if (match(RETURN)) {
+            return returnStatement();
         }
 
         if (match(WHILE)) {
@@ -150,6 +164,22 @@ public class Parser {
     }
 
     /**
+     * returnStmt → "return" expression? ";" ;
+     *
+     * @return Stmt
+     */
+    private Stmt returnStatement() {
+        Token keyword = previous();
+        Expr value = null;
+        if (!check(SEMICOLON)) {
+            value = expression();
+        }
+
+        consume(SEMICOLON, "Expect ';' after return value.");
+        return new Stmt.Return(keyword, value);
+    }
+
+    /**
      * varDecl -> 'var' IDENTIFIER ( "=" expression )? ";";
      *
      * @return Stmt
@@ -184,6 +214,34 @@ public class Parser {
         Expr expr = expression();
         consume(SEMICOLON, "Expect ';' after expression.");
         return new Stmt.Expression(expr);
+    }
+
+    /**
+     * funDecl    → "fun" function ;
+     * function   → IDENTIFIER "(" parameters? ")" block ;
+     * parameters → IDENTIFIER ( "," IDENTIFIER )* ;
+     *
+     * @param kind Kind
+     * @return Stmt
+     */
+    private Stmt.Function function(String kind) {
+        Token name = consume(IDENTIFIER, "Expect " + kind + " name.");
+        consume(LEFT_PAREN, "Expect '(' after " + kind + " name.");
+
+        var parameters = new ArrayList<Token>();
+        if (!check(RIGHT_PAREN)) {
+            do {
+                if (parameters.size() >= 255) {
+                    error(peek(), "Can't have more than 255 parameters.");
+                }
+
+                parameters.add(consume(IDENTIFIER, "Expect parameter name."));
+            } while (match(COMMA));
+        }
+        consume(RIGHT_PAREN, "Expect ')' after parameters");
+        consume(LEFT_BRACE, "Expect '{' before " + kind + " body.");
+        List<Stmt> body = block();
+        return new Stmt.Function(name, parameters, body);
     }
 
     /**
@@ -339,7 +397,48 @@ public class Parser {
             return new Expr.Unary(operator, right);
         }
 
-        return primary();
+        return call();
+    }
+
+    /**
+     * call → primary ( "(" arguments? ")" )* ;
+     *
+     * @return Expr
+     */
+    private Expr call() {
+        var expr = primary();
+
+        while (true) {
+            if (match(LEFT_PAREN)) {
+                expr = finishCall(expr);
+            } else {
+                break;
+            }
+        }
+
+        return expr;
+    }
+
+    /**
+     * arguments → expression ( "," expression )* ;
+     *
+     * @param callee Callee
+     * @return Expr
+     */
+    private Expr finishCall(Expr callee) {
+        var arguments = new ArrayList<Expr>();
+        if (check(RIGHT_PAREN)) {
+            do {
+                if (arguments.size() >= 255) {
+                    error(peek(), "Can't have more then 255 arguments.");
+                }
+                arguments.add(expression());
+            } while (match(COMMA));
+        }
+
+        Token paren = consume(RIGHT_PAREN, "Expect ')' after arguments.");
+
+        return new Expr.Call(callee, paren, arguments);
     }
 
     /**
