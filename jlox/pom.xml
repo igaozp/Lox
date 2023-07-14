@@ -16,8 +16,12 @@
                     <source>20</source>
                     <target>20</target>
                 </configuration>
+                <version>3.11.0</version>
             </plugin>
         </plugins>
     </build>
 
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
 </project>
