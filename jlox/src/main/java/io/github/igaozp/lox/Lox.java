@@ -64,6 +64,13 @@ public class Lox {
             return;
         }
 
+        var resolver = new Resolver(interpreter);
+        resolver.resolve(statements);
+        // Stop if there was a syntax error.
+        if (hadError) {
+            return;
+        }
+
         interpreter.interpret(statements);
 
 //        System.out.println(new AstPrinter().print(statements));
