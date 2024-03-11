@@ -454,7 +454,7 @@ public class Parser {
      */
     private Expr finishCall(Expr callee) {
         var arguments = new ArrayList<Expr>();
-        if (check(RIGHT_PAREN)) {
+        if (!check(RIGHT_PAREN)) {
             do {
                 if (arguments.size() >= 255) {
                     error(peek(), "Can't have more then 255 arguments.");
