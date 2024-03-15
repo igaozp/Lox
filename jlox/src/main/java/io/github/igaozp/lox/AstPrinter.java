@@ -64,6 +64,12 @@ class AstPrinter implements Expr.Visitor<String> {
         return null;
     }
 
+    @Override
+    public String visitThisExpr(Expr.This expr) {
+        // todo
+        return null;
+    }
+
     private String parentTheSize(String name, Expr... exprs) {
         var builder = new StringBuilder();
 
